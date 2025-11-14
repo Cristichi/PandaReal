@@ -83,7 +83,7 @@ public class Jugador {
         tablaPuntuacion[ronda][CategoriaPuntuacion.BLANCOS.ordinal()] = sumaBlancos;
         tablaPuntuacion[ronda][CategoriaPuntuacion.ROSAS.ordinal()] = sumaRosas;
 
-        System.out.printf("[%s] Puntuación de la ronda %d actualizada.%n", nombre, ronda+1);
+        System.out.printf("Puntuación de la ronda %d de %s actualizada.%n", ronda+1, this);
         if (sumaAmarillos!=0)
             System.out.printf("- Amarillos: %d%n", sumaAmarillos);
         if (sumaMorados!=0)
@@ -106,10 +106,6 @@ public class Jugador {
         return Arrays.stream(tablaPuntuacion[ronda]).sum();
     }
 
-    public int[] getPuntuacionRonda(int ronda){
-        return tablaPuntuacion[ronda];
-    }
-
     public int calcularTotal(){
         int total = 0;
         for (int ronda = 0; ronda < tablaPuntuacion.length; ronda++) {
@@ -122,6 +118,10 @@ public class Jugador {
 
     public String getNombre() {
         return nombre;
+    }
+
+    public int manoSize() {
+        return mano.size();
     }
 
     public Iterator<Dado> iterateMano() {
@@ -149,7 +149,7 @@ public class Jugador {
     }
 
     public int elegirDado(Dado[] opciones){
-        System.out.printf("\n[%s] tus dados:%n", nombre);
+        System.out.printf("\n%s tus dados:%n", this);
         for (int i = 0; i < mano.size(); i++) {
             System.out.printf("%d) %s%n", i+1, mano.get(i));
         }
@@ -160,7 +160,7 @@ public class Jugador {
         if (humano){
             while (true){
                 try {
-                    System.out.printf("[%s]: ", nombre);
+                    System.out.printf("%s: ", this);
                     byte[] buffer = new byte[10];
                     int read = System.in.read(buffer);
                     String input = new String(buffer, 0, read).trim();
@@ -176,12 +176,13 @@ public class Jugador {
             }
         } else {
             int opcion = (int) (Math.random() * opciones.length);
-            Util.pulsaIntro("[%s]: %s (CPU ha elegido, pulsa \"INTRO\")".formatted(nombre, opcion + 1));
+            Util.pulsaIntro("%s: %s".formatted(this, opcion + 1));
             return opcion;
         }
     }
 
-    public int manoSize() {
-        return mano.size();
+    @Override
+    public String toString() {
+        return nombre+(humano ? "" : " (CPU)");
     }
 }

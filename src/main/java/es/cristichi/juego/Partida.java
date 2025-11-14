@@ -43,7 +43,8 @@ public class Partida extends Thread {
         for (Jugador jugador : jugadores) {
             jugador.iniciarTablaPuntuacion(rondas);
         }
-        System.out.println("Partida iniciada con " + jugadores.size() + " jugadores. Suertes buenas.\n\n");
+        System.out.printf("Partida iniciada con %d jugadores.%nLa partida se jugará a %d rondas.%nBuena suerte.%n%n",
+                jugadores.size(), rondas);
         for (int ronda = 0; ronda < rondas; ronda++) {
             int finalRonda = ronda;
             System.out.printf("%n¡Ronda %d!%n%n", finalRonda+1);
@@ -53,7 +54,7 @@ public class Partida extends Thread {
             Jugador nuevoPanda = null;
             int amarilloNuevoPanda = -1;
             for (Jugador jugador : jugadores) {
-                Util.pulsaIntro("\n* Pulsa \"INTRO\" para lanzar, " + jugador.getNombre() + "...");
+                Util.pulsaIntro("\n* %s, pulsa \"INTRO\" para lanzar...".formatted(jugador));
                 Iterator<Dado> it = jugador.iterateMano();
                 DadoCantidad[] lanzados = new DadoCantidad[jugador.manoSize()];
                 int index = 0;
@@ -75,65 +76,72 @@ public class Partida extends Thread {
                 System.out.printf("Puntuación en la ronda: %d puntos.%n", jugador.calcularTotalRonda(finalRonda));
                 System.out.printf("Puntuación total: %d puntos.%n", jugador.calcularTotal());
             }
-            // Elección de nuevo panda, rotamos el array de forma que el orden es el mismo pero el panda es el 0
-            if (nuevoPanda == null){
-                throw new IllegalStateException("No se ha podido determinar el nuevo panda");
-            }
-            Collections.rotate(jugadores, jugadores.indexOf(nuevoPanda) * -1);
-            System.out.printf("%n%s es el nuevo panda para la siguiente ronda con %d puntos amarillos.%n",
-                    nuevoPanda.getNombre(), amarilloNuevoPanda);
+            if (finalRonda == rondas -1){
+                Jugador ganador = Collections.max(jugadores, Comparator.comparingInt(Jugador::calcularTotal));
+                System.out.printf("El ganador de la partida es %s con %d puntos. ¡Enhorabuena!%n",
+                        ganador, ganador.calcularTotal());
+            } else {
 
-            Util.pulsaIntro("\nPaso 2: ¡Dados rosas!");
-            // Todos los dados rosas se sacan de todos los jugadores y se reparten a los menos afortunados de esta ronda
-            ArrayList<Jugador> jugadoresOrdenadosPuntuacion = new ArrayList<>(jugadores);
-            jugadoresOrdenadosPuntuacion.sort(Comparator.comparingInt(j -> j.calcularTotalRonda(finalRonda)));
+                // Elección de nuevo panda, rotamos el array de forma que el orden es el mismo pero el panda es el 0
+                if (nuevoPanda == null) {
+                    throw new IllegalStateException("No se ha podido determinar el nuevo panda");
+                }
+                Collections.rotate(jugadores, jugadores.indexOf(nuevoPanda) * -1);
+                System.out.printf("%n%s es el nuevo panda para la siguiente ronda con %d puntos amarillos.%n",
+                        nuevoPanda.getNombre(), amarilloNuevoPanda);
 
-            ArrayList<Dado> dadosRosasSacados = new ArrayList<>(Arrays.asList(bolsa.sacarDadosRosas()));
-            for (Jugador jugador : jugadores) {
-                Iterator<Dado> it = jugador.iterateMano();
-                while (it.hasNext()) {
-                    Dado dado = it.next();
-                    if (dado.colorDado() == ColorDado.ROSA) {
-                        dadosRosasSacados.add(dado);
-                        it.remove();
+                Util.pulsaIntro("\nPaso 2: ¡Dados rosas!");
+                // Todos los dados rosas se sacan de todos los jugadores y se reparten a los menos afortunados de esta ronda
+                ArrayList<Jugador> jugadoresOrdenadosPuntuacion = new ArrayList<>(jugadores);
+                jugadoresOrdenadosPuntuacion.sort(Comparator.comparingInt(j -> j.calcularTotalRonda(finalRonda)));
+
+                ArrayList<Dado> dadosRosasSacados = new ArrayList<>(Arrays.asList(bolsa.sacarDadosRosas()));
+                for (Jugador jugador : jugadores) {
+                    Iterator<Dado> it = jugador.iterateMano();
+                    while (it.hasNext()) {
+                        Dado dado = it.next();
+                        if (dado.colorDado() == ColorDado.ROSA) {
+                            dadosRosasSacados.add(dado);
+                            it.remove();
+                        }
                     }
                 }
-            }
 
-            for (int i = 0; i < dadosRosasSacados.size(); i++) {
-                Jugador jugador = jugadoresOrdenadosPuntuacion.get(i % jugadoresOrdenadosPuntuacion.size());
-                Dado dadoRosa = dadosRosasSacados.get(i);
-                jugador.addDado(dadoRosa);
-                System.out.printf("%s ha recibido un dado rosa.%n", jugador.getNombre());
-            }
+                for (int i = 0; i < dadosRosasSacados.size(); i++) {
+                    Jugador jugador = jugadoresOrdenadosPuntuacion.get(i % jugadoresOrdenadosPuntuacion.size());
+                    Dado dadoRosa = dadosRosasSacados.get(i);
+                    jugador.addDado(dadoRosa);
+                    System.out.printf("%s ha recibido un dado rosa.%n", jugador.getNombre());
+                }
 
-            Util.pulsaIntro("\nPaso 3: ¡Intercambios! WIP");
+                Util.pulsaIntro("\nPaso 3: ¡Intercambios! WIP");
 
-            Util.pulsaIntro("\nPaso 4: ¡Nuevos dados!");
-            Dado[] nuevos = new Dado[jugadores.size()+1];
-            for (int i = 0; i < nuevos.length; i++) {
-                nuevos[i] = bolsa.sacarDadoAleatorio();
-            }
-
-            for (Jugador jugador : jugadores) {
-                int dadoElegido = jugador.elegirDado(nuevos);
-                jugador.addDado(nuevos[dadoElegido]);
-                System.out.printf("%s ha añadido %s a su mano.%n", jugador.getNombre(), nuevos[dadoElegido]);
-                Dado[] nuevos2 = new Dado[nuevos.length - 1];
-                int index = 0;
+                Util.pulsaIntro("\nPaso 4: ¡Nuevos dados!");
+                Dado[] nuevos = new Dado[jugadores.size() + 1];
                 for (int i = 0; i < nuevos.length; i++) {
-                    if (i != dadoElegido) {
-                        nuevos2[index++] = nuevos[i];
-                    }
+                    nuevos[i] = bolsa.sacarDadoAleatorio();
                 }
-                nuevos = nuevos2;
+
+                for (Jugador jugador : jugadores) {
+                    int dadoElegido = jugador.elegirDado(nuevos);
+                    jugador.addDado(nuevos[dadoElegido]);
+                    System.out.printf("%s ha añadido %s a su mano.%n", jugador.getNombre(), nuevos[dadoElegido]);
+                    Dado[] nuevos2 = new Dado[nuevos.length - 1];
+                    int index = 0;
+                    for (int i = 0; i < nuevos.length; i++) {
+                        if (i != dadoElegido) {
+                            nuevos2[index++] = nuevos[i];
+                        }
+                    }
+                    nuevos = nuevos2;
+                }
+
+                System.out.println("\nTodos han elegido dado. El dado sobrante " + nuevos[0] + " vuelve a la bolsa.");
+                // El dado sobrante vuelve a la bolsa
+                bolsa.addDado(nuevos[0]);
+
+                Util.pulsaIntro("\n\nPulsa \"INTRO\" para terminar la ronda...");
             }
-
-            System.out.println("\nTodos han elegido dado. El dado sobrante " + nuevos[0] + " vuelve a la bolsa.");
-            // El dado sobrante vuelve a la bolsa
-
-
-            Util.pulsaIntro("\n\nPulsa \"INTRO\" para terminar la ronda...");
         }
 
         System.out.println("\nFin de la partida. Puntuaciones:");
