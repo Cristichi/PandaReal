@@ -7,6 +7,6 @@ public record Dado(ColorDado colorDado, int caras) {
 
     @Override
     public String toString() {
-        return caras+"-"+colorDado.toString();
+        return "[d%d %s]".formatted(caras, colorDado.toString());
     }
 }

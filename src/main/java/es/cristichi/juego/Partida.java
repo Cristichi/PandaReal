@@ -1,27 +1,23 @@
 package es.cristichi.juego;
 
-import es.cristichi.obj.Bolsa;
-import es.cristichi.obj.ColorDado;
-import es.cristichi.obj.Dado;
-import es.cristichi.obj.DadoCantidad;
+import es.cristichi.Util;
+import es.cristichi.obj.*;
 
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.*;
 
 public class Partida extends Thread {
     public static DadoCantidad[] BOLSA_TOTAL = new DadoCantidad[] {
-            new DadoCantidad(new Dado(es.cristichi.obj.ColorDado.AMARILLO, 6), 10),
-            new DadoCantidad(new Dado(es.cristichi.obj.ColorDado.AMARILLO, 8), 7),
-            new DadoCantidad(new Dado(es.cristichi.obj.ColorDado.MORADO, 8), 7),
-            new DadoCantidad(new Dado(es.cristichi.obj.ColorDado.MORADO, 12), 7),
-            new DadoCantidad(new Dado(es.cristichi.obj.ColorDado.AZUL, 6), 10),
-            new DadoCantidad(new Dado(es.cristichi.obj.ColorDado.AZUL, 8), 9),
-            new DadoCantidad(new Dado(es.cristichi.obj.ColorDado.AZUL, 12), 9),
-            new DadoCantidad(new Dado(es.cristichi.obj.ColorDado.AZUL_PURPURINA, 6), 7),
-            new DadoCantidad(new Dado(es.cristichi.obj.ColorDado.ROJO, 6), 10),
-            new DadoCantidad(new Dado(es.cristichi.obj.ColorDado.ROJO, 8), 9),
-            new DadoCantidad(new Dado(es.cristichi.obj.ColorDado.VERDE, 20), 10),
-            new DadoCantidad(new Dado(es.cristichi.obj.ColorDado.BLANCO, 6), 7)
+            new DadoCantidad(new Dado(ColorDado.AMARILLO, 8), 7),
+            new DadoCantidad(new Dado(ColorDado.MORADO, 8), 7),
+            new DadoCantidad(new Dado(ColorDado.MORADO, 12), 7),
+            new DadoCantidad(new Dado(ColorDado.AZUL, 6), 10),
+            new DadoCantidad(new Dado(ColorDado.AZUL, 8), 9),
+            new DadoCantidad(new Dado(ColorDado.AZUL, 12), 9),
+            new DadoCantidad(new Dado(ColorDado.AZUL_PURPURINA, 6), 7),
+            new DadoCantidad(new Dado(ColorDado.ROJO, 6), 10),
+            new DadoCantidad(new Dado(ColorDado.ROJO, 8), 9),
+            new DadoCantidad(new Dado(ColorDado.VERDE, 20), 10),
+            new DadoCantidad(new Dado(ColorDado.BLANCO, 6), 7)
     };
 
     protected final int rondas;
@@ -36,7 +32,7 @@ public class Partida extends Thread {
             if (this.isAlive()){
                 throw new IllegalStateException("No se pueden añadir jugadores a una partida en curso");
             }
-            jugador.addDado(bolsa.sacarDado(ColorDado.AMARILLO, 6));
+            jugador.addDado(new Dado(ColorDado.AMARILLO, 6));
             this.jugadores.add(jugador);
         }
     }
@@ -49,19 +45,95 @@ public class Partida extends Thread {
         }
         System.out.println("Partida iniciada con " + jugadores.size() + " jugadores. Suertes buenas.\n\n");
         for (int ronda = 0; ronda < rondas; ronda++) {
-            System.out.printf("%n¡Ronda %d!%n%n", ronda+1);
+            int finalRonda = ronda;
+            System.out.printf("%n¡Ronda %d!%n%n", finalRonda+1);
 
             System.out.println("Paso 1: ¡A lanzar los dados!");
+
+            Jugador nuevoPanda = null;
+            int amarilloNuevoPanda = -1;
             for (Jugador jugador : jugadores) {
-                System.out.println("  Dados de " + jugador.getNombre() + ":");
+                Util.pulsaIntro("\n* Pulsa \"INTRO\" para lanzar, " + jugador.getNombre() + "...");
                 Iterator<Dado> it = jugador.iterateMano();
+                DadoCantidad[] lanzados = new DadoCantidad[jugador.manoSize()];
+                int index = 0;
                 while(it.hasNext()) {
                     Dado dado = it.next();
                     int resultado = dado.lanzar();
-                    System.out.printf("   %s> [%d]%n", dado, resultado);
-                    jugador.puntuar(ronda, new DadoCantidad(dado, resultado));
+                    lanzados[index] = new DadoCantidad(dado, resultado);
+                    System.out.printf("%s> [%d]%n", dado, resultado);
+                    index++;
+                }
+                int[] puntuacionRonda = jugador.puntuarRonda(finalRonda, lanzados);
+                int amarillos = puntuacionRonda[CategoriaPuntuacion.AMARILLOS.ordinal()];
+                if (amarillos > amarilloNuevoPanda){
+                    nuevoPanda = jugador;
+                    amarilloNuevoPanda = amarillos;
+                }
+
+                System.out.printf("Puntuación en esta ronda: %d%n", Arrays.stream(puntuacionRonda).sum());
+                System.out.printf("Puntuación en la ronda: %d puntos.%n", jugador.calcularTotalRonda(finalRonda));
+                System.out.printf("Puntuación total: %d puntos.%n", jugador.calcularTotal());
+            }
+            // Elección de nuevo panda, rotamos el array de forma que el orden es el mismo pero el panda es el 0
+            if (nuevoPanda == null){
+                throw new IllegalStateException("No se ha podido determinar el nuevo panda");
+            }
+            Collections.rotate(jugadores, jugadores.indexOf(nuevoPanda) * -1);
+            System.out.printf("%n%s es el nuevo panda para la siguiente ronda con %d puntos amarillos.%n",
+                    nuevoPanda.getNombre(), amarilloNuevoPanda);
+
+            Util.pulsaIntro("\nPaso 2: ¡Dados rosas!");
+            // Todos los dados rosas se sacan de todos los jugadores y se reparten a los menos afortunados de esta ronda
+            ArrayList<Jugador> jugadoresOrdenadosPuntuacion = new ArrayList<>(jugadores);
+            jugadoresOrdenadosPuntuacion.sort(Comparator.comparingInt(j -> j.calcularTotalRonda(finalRonda)));
+
+            ArrayList<Dado> dadosRosasSacados = new ArrayList<>(Arrays.asList(bolsa.sacarDadosRosas()));
+            for (Jugador jugador : jugadores) {
+                Iterator<Dado> it = jugador.iterateMano();
+                while (it.hasNext()) {
+                    Dado dado = it.next();
+                    if (dado.colorDado() == ColorDado.ROSA) {
+                        dadosRosasSacados.add(dado);
+                        it.remove();
+                    }
                 }
             }
+
+            for (int i = 0; i < dadosRosasSacados.size(); i++) {
+                Jugador jugador = jugadoresOrdenadosPuntuacion.get(i % jugadoresOrdenadosPuntuacion.size());
+                Dado dadoRosa = dadosRosasSacados.get(i);
+                jugador.addDado(dadoRosa);
+                System.out.printf("%s ha recibido un dado rosa.%n", jugador.getNombre());
+            }
+
+            Util.pulsaIntro("\nPaso 3: ¡Intercambios! WIP");
+
+            Util.pulsaIntro("\nPaso 4: ¡Nuevos dados!");
+            Dado[] nuevos = new Dado[jugadores.size()+1];
+            for (int i = 0; i < nuevos.length; i++) {
+                nuevos[i] = bolsa.sacarDadoAleatorio();
+            }
+
+            for (Jugador jugador : jugadores) {
+                int dadoElegido = jugador.elegirDado(nuevos);
+                jugador.addDado(nuevos[dadoElegido]);
+                System.out.printf("%s ha añadido %s a su mano.%n", jugador.getNombre(), nuevos[dadoElegido]);
+                Dado[] nuevos2 = new Dado[nuevos.length - 1];
+                int index = 0;
+                for (int i = 0; i < nuevos.length; i++) {
+                    if (i != dadoElegido) {
+                        nuevos2[index++] = nuevos[i];
+                    }
+                }
+                nuevos = nuevos2;
+            }
+
+            System.out.println("\nTodos han elegido dado. El dado sobrante " + nuevos[0] + " vuelve a la bolsa.");
+            // El dado sobrante vuelve a la bolsa
+
+
+            Util.pulsaIntro("\n\nPulsa \"INTRO\" para terminar la ronda...");
         }
 
         System.out.println("\nFin de la partida. Puntuaciones:");

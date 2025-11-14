@@ -1,6 +1,7 @@
 package es.cristichi.obj;
 
 import es.cristichi.exc.DadoNoEncontrado;
+import es.cristichi.juego.Jugador;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -37,6 +38,10 @@ public class Bolsa {
                 }
             }
         }
+    }
+
+    public void addDado(Dado nuevo) {
+        dados.add(nuevo);
     }
 
     public Dado sacarDadoAleatorio() {
@@ -89,6 +94,4 @@ public class Bolsa {
     public Iterator<Dado> iterator() {
         return dados.iterator();
     }
-
-
 }
