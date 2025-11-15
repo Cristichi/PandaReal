@@ -37,6 +37,7 @@ public class MainJF extends JFrame {
         scrollPane = new JScrollPane(textAreaPantalla);
 
         inputField = new JTextField();
+        textAreaPantalla.setFont(new Font("Monospaced", Font.PLAIN, 20));
         inputField.addActionListener(_ -> {
             if (waitingInput){
                 waitingInput = false;
@@ -76,7 +77,7 @@ public class MainJF extends JFrame {
                 jugadores.add(nuevo);
                 escribirEnPantalla("Añadido el jugador %s%n", nuevo);
             }
-        } while (!input.equals("jugar"));
+        } while (!input.equals("jugar") || jugadores.size() < 2);
 
         // Preguntar número de rondas, 10 por defecto
         int numRondas = inputEntero(null, "¿Cuántas rondas queréis jugar? (Juego normal son 10)",
