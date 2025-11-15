@@ -145,9 +145,15 @@ public class Jugador {
     public void intercambiarDadoBlanco(Jugador oponente, int indiceMio, int indiceTuyo) {
         Dado dadoMio = mano.get(indiceMio);
         if (dadoMio.colorDado() != ColorDado.BLANCO){
-            throw new UnsupportedOperationException("No se puede cambiar un dado que no es blanco");
+            throw new UnsupportedOperationException("Solo puedes cambiar tus dados blancos.");
         }
         Dado dadoTuyo = oponente.mano.get(indiceTuyo);
+        if (dadoTuyo.colorDado() == ColorDado.BLANCO){
+            throw new UnsupportedOperationException("No se puede cambiar un dado blanco del oponente." );
+        }
+        if (dadoTuyo.colorDado() == ColorDado.ROSA){
+            throw new UnsupportedOperationException("No se puede cambiar un dado rosa." );
+        }
         oponente.mano.set(indiceTuyo, dadoMio);
         this.mano.set(indiceMio, dadoTuyo);
     }
