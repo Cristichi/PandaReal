@@ -12,7 +12,7 @@ import java.util.concurrent.Semaphore;
 
 public class MainJF extends JFrame {
     protected JScrollPane scrollPane;
-    protected JTextArea consoleArea;
+    protected JTextArea textAreaPantalla;
     protected JTextField inputField;
 
     protected boolean waitingInput;
@@ -24,14 +24,17 @@ public class MainJF extends JFrame {
         semaforoInput = new Semaphore(0);
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(600, 400);
+        setSize(1200, 800);
 
-        consoleArea = new JTextArea();
-        consoleArea.setEditable(false);
-        consoleArea.setLineWrap(true);
-        consoleArea.setWrapStyleWord(true);
-        consoleArea.setBorder(new EmptyBorder(3, 10, 10, 3));
-        scrollPane = new JScrollPane(consoleArea);
+        textAreaPantalla = new JTextArea();
+        textAreaPantalla.setBackground(Color.LIGHT_GRAY);
+        textAreaPantalla.setFont(new Font("Cabin", Font.PLAIN, 20));
+        textAreaPantalla.setEditable(false);
+        textAreaPantalla.setFocusable(false);
+        textAreaPantalla.setLineWrap(true);
+        textAreaPantalla.setWrapStyleWord(true);
+        textAreaPantalla.setBorder(new EmptyBorder(3, 10, 10, 3));
+        scrollPane = new JScrollPane(textAreaPantalla);
 
         inputField = new JTextField();
         inputField.addActionListener(_ -> {
@@ -58,14 +61,17 @@ public class MainJF extends JFrame {
                 "Avísame cuando hagas leído esto pulsando la tecla intro.%n%n");
         esperarIntro("Pulsar INTRO para continuar...");
 
+
+        escribirEnPantalla("¡Adelante! Lo primero de todo es saber quién va a jugar.%n");
+
         // Vamos a preguntar al usuario el número de jugadores y sus nombres, y cuáles son humanos/CPU
         ArrayList<Jugador> jugadores = new ArrayList<>();
         String input;
         do {
             input = inputString(null,
-                    "Introduce el nombre del siguiente jugador (o 'jugar' para empezar la partida).", false);
+                    "%nIntroduce el nombre del siguiente jugador (o 'jugar' para empezar la partida).", false);
             if (!input.equals("jugar")) {
-                String esHumano = inputString(null, "¿Es un jugador humano? (S/n)", true);
+                String esHumano = inputString(null, "¿Es %s un jugador humano? (Escribe \"S\" o \"n\")".formatted(input), true);
                 Jugador nuevo = new Jugador(input, !esHumano.equalsIgnoreCase("n"));
                 jugadores.add(nuevo);
                 escribirEnPantalla("Añadido el jugador %s%n", nuevo);
@@ -86,8 +92,8 @@ public class MainJF extends JFrame {
      * @param args Argumentos para formatear el mensaje con {@link String#formatted(Object...)}.
      */
     public void escribirEnPantalla(String mensaje, Object... args) {
-        consoleArea.append(mensaje.formatted(args));
-        consoleArea.setCaretPosition(consoleArea.getDocument().getLength());
+        textAreaPantalla.append(mensaje.formatted(args));
+        textAreaPantalla.setCaretPosition(textAreaPantalla.getDocument().getLength());
     }
 
     /**
@@ -110,18 +116,17 @@ public class MainJF extends JFrame {
      */
     public void liberarSemaforoInput() {
         semaforoInput.release();
-        // Si no hay más input que esperar, deshabilitar la barra de input
-        if (!waitingInput) {
-            inputField.setVisible(false);
-        }
+        inputField.setVisible(false);
     }
 
     /**
-     *
-     * @param defecto Escribe el mensaje en la barra de input y espera a que el jugador pulse INTRO
+     * Espera a que el jugador pulse INTRO en la barra de input.
+     * @param defecto Escribe el mensaje en la barra de input si no es null.
      */
     public void esperarIntro(String defecto) {
-        inputField.setText(defecto);
+        if (defecto != null){
+            inputField.setText(defecto);
+        }
         waitingInput = true;
         esperarSemaforoInput();
         inputField.setText("");
@@ -158,7 +163,7 @@ public class MainJF extends JFrame {
         } else {
             // Si es una CPU, generar un número aleatorio dentro del rango
             int valor = (int) (Math.random() * (max - min)) + min;
-            escribirEnPantalla("%s: %d%n", mensaje, valor);
+            escribirEnPantalla("%s: %d%n", jugador, valor);
             return valor;
         }
     }

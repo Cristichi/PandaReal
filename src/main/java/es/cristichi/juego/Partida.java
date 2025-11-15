@@ -267,7 +267,7 @@ public class Partida extends Thread {
 
         window.escribirEnPantalla("%nFin de la partida. Puntuaciones:%n");
         for (Jugador jugador : jugadores) {
-            window.escribirEnPantalla("%s: $d puntos.%n", jugador, jugador.calcularTotal());
+            window.escribirEnPantalla("%s: %*d puntos.%n", jugador, jugador.calcularTotal());
         }
         window.escribirEnPantalla("Muchas gracias por jugar. Crédito a Last Night games por el juegazo.%n");
     }
