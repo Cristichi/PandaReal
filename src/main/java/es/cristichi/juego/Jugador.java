@@ -116,10 +116,6 @@ public class Jugador {
         return total;
     }
 
-    public String getNombre() {
-        return nombre;
-    }
-
     public int manoSize() {
         return mano.size();
     }
@@ -128,8 +124,16 @@ public class Jugador {
         return mano.iterator();
     }
 
+    public Object getDado(int indiceDadoOponente) {
+        return mano.get(indiceDadoOponente);
+    }
+
     public void addDado(Dado dado) {
         mano.add(dado);
+    }
+
+    public boolean esHumano() {
+        return humano;
     }
 
     /**
@@ -157,28 +161,7 @@ public class Jugador {
         for (int i = 0; i < opciones.length; i++) {
             System.out.printf("#%d) %s%n", i+1, opciones[i]);
         }
-        if (humano){
-            while (true){
-                try {
-                    System.out.printf("%s: ", this);
-                    byte[] buffer = new byte[10];
-                    int read = System.in.read(buffer);
-                    String input = new String(buffer, 0, read).trim();
-                    int opcion = Integer.parseInt(input)-1;
-                    if (opcion < 0 || opcion >= opciones.length) {
-                        System.out.println("Opción inválida. Elige un número entre 1 y " + opciones.length + ": ");
-                    } else {
-                        return opcion;
-                    }
-                } catch (Exception e){
-                    System.out.println("Error. Prueba a poner un número.");
-                }
-            }
-        } else {
-            int opcion = (int) (Math.random() * opciones.length);
-            Util.pulsaIntro("%s: %s".formatted(this, opcion + 1));
-            return opcion;
-        }
+        return Util.inputEntero(this, "Elige un dado (número): ", 1, opciones.length + 1) - 1;
     }
 
     @Override

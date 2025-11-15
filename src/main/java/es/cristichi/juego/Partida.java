@@ -81,14 +81,13 @@ public class Partida extends Thread {
                 System.out.printf("El ganador de la partida es %s con %d puntos. ¡Enhorabuena!%n",
                         ganador, ganador.calcularTotal());
             } else {
-
                 // Elección de nuevo panda, rotamos el array de forma que el orden es el mismo pero el panda es el 0
                 if (nuevoPanda == null) {
                     throw new IllegalStateException("No se ha podido determinar el nuevo panda");
                 }
                 Collections.rotate(jugadores, jugadores.indexOf(nuevoPanda) * -1);
                 System.out.printf("%n%s es el nuevo panda para la siguiente ronda con %d puntos amarillos.%n",
-                        nuevoPanda.getNombre(), amarilloNuevoPanda);
+                        nuevoPanda, amarilloNuevoPanda);
 
                 Util.pulsaIntro("\nPaso 2: ¡Dados rosas!");
                 // Todos los dados rosas se sacan de todos los jugadores y se reparten a los menos afortunados de esta ronda
@@ -111,10 +110,105 @@ public class Partida extends Thread {
                     Jugador jugador = jugadoresOrdenadosPuntuacion.get(i % jugadoresOrdenadosPuntuacion.size());
                     Dado dadoRosa = dadosRosasSacados.get(i);
                     jugador.addDado(dadoRosa);
-                    System.out.printf("%s ha recibido un dado rosa.%n", jugador.getNombre());
+                    System.out.printf("%s ha recibido un dado rosa.%n", jugador);
                 }
 
-                Util.pulsaIntro("\nPaso 3: ¡Intercambios! WIP");
+                Util.pulsaIntro("\nPaso 3: ¡Intercambios!");
+                // Determinamos qué jugadores pueden intercambiar dados blancos y cuántos exactamente.
+                // Para que no pueda un jugador intercambiar un dado que no tenía al principio de la ronda
+                Map<Jugador, Integer> intercambiosPosibles = new HashMap<>();
+                for (Jugador jugador : jugadores) {
+                    int blancos = 0;
+                    Iterator<Dado> it = jugador.iterateMano();
+                    while (it.hasNext()) {
+                        Dado dado = it.next();
+                        if (dado.colorDado() == ColorDado.BLANCO) {
+                            blancos++;
+                        }
+                    }
+                    if (blancos > 0) {
+                        intercambiosPosibles.put(jugador, blancos);
+                    }
+                }
+                if (intercambiosPosibles.isEmpty()){
+                    System.out.println(" Ningún jugador tiene dados blancos para intercambiar.");
+                }
+                for (Map.Entry<Jugador, Integer> entry : intercambiosPosibles.entrySet()){
+                    for (int i = 0; i < entry.getValue(); i++) {
+                        // Mostramos al jugador TODAS las posibles opciones de intercambio
+                        // (son todos los dados de todos los jugadores) y le dejamos elegir.
+                        // La elección es en dos partes, elige jugador y luego dado.
+                        // Como hacemos esto con cada dado blanco, intercambiamos esos en
+                        // el orden en el que aparecen para no pedir tanto input.
+                        Jugador jugador = entry.getKey();
+                        System.out.printf("\n%s, puedes intercambiar un dado blanco. Tus dados:%n", jugador);
+                        Iterator<Dado> tuMano = jugador.iterateMano();
+                        while (tuMano.hasNext()){
+                            Dado dado = tuMano.next();
+                            System.out.printf("> %s%n", dado);
+                        }
+                        System.out.printf("Estos son los dados de tus oponentes:%n");
+                        ArrayList<Jugador> oponentes = new ArrayList<>(jugadores);
+                        oponentes.remove(jugador);
+                        // Cuenta el número de dados no blancos de los oponentes que pueden ser intercambiados
+                        HashMap<Jugador, ArrayList<Dado>> mapaOppDado = new HashMap<>(jugadores.size()*(1+finalRonda));
+                        for (int j = 0; j < oponentes.size(); j++) {
+                            Jugador oponente = oponentes.get(j);
+                            System.out.printf("%d) %s%n", j+1, oponente);
+                            Iterator<Dado> manoOponente = oponente.iterateMano();
+                            mapaOppDado.put(oponente, new ArrayList<>(oponente.manoSize()));
+                            int inDado = 1;
+                            for (int k = 0; k < oponente.manoSize(); k++) {
+                                Dado dadoOponente = manoOponente.next();
+                                if (dadoOponente.colorDado() == ColorDado.BLANCO){
+                                    System.out.printf("   X) %s (No puedes intercambiar el dado blanco)%n", dadoOponente);
+                                } else if (dadoOponente.colorDado() == ColorDado.ROSA){
+                                    System.out.printf("   X) %s (No puedes intercambiar el dado rosa)%n", dadoOponente);
+                                } else {
+                                    mapaOppDado.get(oponente).add(dadoOponente);
+                                    System.out.printf("   %d) %s%n", inDado, dadoOponente);
+                                    inDado++;
+                                }
+                            }
+                        }
+                        int inputIndOpp =
+                                Util.inputEntero(jugador, "Elige el índice del oponente con el que quieres intercambiar: ", 1,
+                                oponentes.size()+1) - 1;
+                        Jugador oponenteElegido = oponentes.get(inputIndOpp);
+                        ArrayList<Dado> dadosOppInter = mapaOppDado.get(oponenteElegido);
+                        int inputIndDado = Util.inputEntero(jugador, "Elige el índice del dado de %s que quieres: ".formatted(oponenteElegido),
+                                1, dadosOppInter.size()+1) - 1;
+
+                        // Tomamos el índice del primer dado del jugador que está intercambiando
+                        int indiceDadoBlanco = -1;
+                        Iterator<Dado> it = jugador.iterateMano();
+                        for (int j = 0; j < jugador.manoSize(); j++) {
+                            Dado dado = it.next();
+                            if (dado.colorDado() == ColorDado.BLANCO) {
+                                indiceDadoBlanco = j;
+                                break;
+                            }
+                        }
+                        // Calculamos el índice real del dado del oponente elegido
+                        int contadorDadoNoIntercambiable = -1;
+                        int indiceDadoOponente = -1;
+                        Iterator<Dado> itOponente = oponenteElegido.iterateMano();
+                        for (int j = 0; j < oponenteElegido.manoSize(); j++) {
+                            Dado dadoOponente = itOponente.next();
+                            if (dadoOponente.colorDado() != ColorDado.BLANCO && dadoOponente.colorDado() != ColorDado.ROSA){
+                                contadorDadoNoIntercambiable++;
+                            }
+                            if (contadorDadoNoIntercambiable == inputIndDado){
+                                indiceDadoOponente = j;
+                                break;
+                            }
+                        }
+                        System.out.printf("%s ha intercambiado un dado blanco por %s de %s.%n",
+                                jugador, oponenteElegido.getDado(indiceDadoOponente), oponenteElegido);
+                        jugador.intercambiarDadoBlanco(oponenteElegido, indiceDadoBlanco, indiceDadoOponente);
+                    }
+                }
+
 
                 Util.pulsaIntro("\nPaso 4: ¡Nuevos dados!");
                 Dado[] nuevos = new Dado[jugadores.size() + 1];
@@ -125,7 +219,7 @@ public class Partida extends Thread {
                 for (Jugador jugador : jugadores) {
                     int dadoElegido = jugador.elegirDado(nuevos);
                     jugador.addDado(nuevos[dadoElegido]);
-                    System.out.printf("%s ha añadido %s a su mano.%n", jugador.getNombre(), nuevos[dadoElegido]);
+                    System.out.printf("%s ha añadido %s a su mano.%n", jugador, nuevos[dadoElegido]);
                     Dado[] nuevos2 = new Dado[nuevos.length - 1];
                     int index = 0;
                     for (int i = 0; i < nuevos.length; i++) {
@@ -146,7 +240,7 @@ public class Partida extends Thread {
 
         System.out.println("\nFin de la partida. Puntuaciones:");
         for (Jugador jugador : jugadores) {
-            System.out.println(jugador.getNombre() + ": " + jugador.calcularTotal() + " puntos.");
+            System.out.println(jugador + ": " + jugador.calcularTotal() + " puntos.");
         }
     }
 }
