@@ -108,9 +108,9 @@ public class Jugador {
 
     public int calcularTotal(){
         int total = 0;
-        for (int ronda = 0; ronda < tablaPuntuacion.length; ronda++) {
-            for (int categoria = 0; categoria < tablaPuntuacion[ronda].length; categoria++) {
-                total += tablaPuntuacion[ronda][categoria];
+        for (int[] ints : tablaPuntuacion) {
+            for (int anInt : ints) {
+                total += anInt;
             }
         }
         return total;
