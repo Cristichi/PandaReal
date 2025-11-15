@@ -1,6 +1,6 @@
 package es.cristichi.juego;
 
-import es.cristichi.Util;
+import es.cristichi.gui.MainJF;
 import es.cristichi.obj.CategoriaPuntuacion;
 import es.cristichi.obj.ColorDado;
 import es.cristichi.obj.Dado;
@@ -15,12 +15,6 @@ public class Jugador {
     private final boolean humano;
     private final ArrayList<Dado> mano;
     private int[][] tablaPuntuacion;
-
-    public Jugador(String nombre) {
-        this.nombre = nombre;
-        mano = new ArrayList<>();
-        this.humano = true;
-    }
 
     public Jugador(String nombre, boolean humano) {
         this.nombre = nombre;
@@ -83,22 +77,6 @@ public class Jugador {
         tablaPuntuacion[ronda][CategoriaPuntuacion.BLANCOS.ordinal()] = sumaBlancos;
         tablaPuntuacion[ronda][CategoriaPuntuacion.ROSAS.ordinal()] = sumaRosas;
 
-        System.out.printf("Puntuación de la ronda %d de %s actualizada.%n", ronda+1, this);
-        if (sumaAmarillos!=0)
-            System.out.printf("- Amarillos: %d%n", sumaAmarillos);
-        if (sumaMorados!=0)
-            System.out.printf("- Morados: %d%n", sumaMorados);
-        if (sumaAzules!=0)
-            System.out.printf("- Azules: %d%n", sumaAzules);
-        if (sumaRojos!=0)
-            System.out.printf("- Rojos: %d%n", sumaRojos);
-        if (sumaVerdes!=0)
-            System.out.printf("- Verdes: %d%n", sumaVerdes);
-        if (sumaBlancos!=0)
-            System.out.printf("- Blancos: %d%n", sumaBlancos);
-        if (sumaRosas!=0)
-            System.out.printf("- Rosas: %d%n", sumaRosas);
-
         return tablaPuntuacion[ronda];
     }
 
@@ -158,16 +136,23 @@ public class Jugador {
         this.mano.set(indiceMio, dadoTuyo);
     }
 
-    public int elegirDado(Dado[] opciones){
-        System.out.printf("\n%s tus dados:%n", this);
+    /**
+     * Muestra los dados del jugador y le pide que elija uno de entre las opciones dadas.
+     * @param window Ventana principal, para mostrar mensajes y pedir input
+     * @param opciones Opciones de dados a elegir
+     * @return Índice del dado elegido en el array de opciones
+     */
+    public int elegirDado(MainJF window, Dado[] opciones){
+        window.escribirEnPantalla("%n%s tus dados:%n", this);
         for (Dado dado : mano) {
-            System.out.printf("%s%n", dado);
+            window.escribirEnPantalla("%s%n", dado);
         }
-        System.out.println("Ahora, elige un dado para añadir:");
+        window.escribirEnPantalla("Ahora, elige un dado para añadir entre estos:%n");
         for (int i = 0; i < opciones.length; i++) {
-            System.out.printf("%d) %s%n", i+1, opciones[i]);
+            window.escribirEnPantalla("%d) %s%n", i+1, opciones[i]);
         }
-        return Util.inputEntero(this, "Elige un dado (número): ", 1, opciones.length + 1) - 1;
+        return window.inputEntero(this, null, "Elige un número entre 1 y %d.".formatted(opciones.length),
+                1, opciones.length + 1) - 1;
     }
 
     @Override
