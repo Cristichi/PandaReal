@@ -160,12 +160,12 @@ public class Jugador {
 
     public int elegirDado(Dado[] opciones){
         System.out.printf("\n%s tus dados:%n", this);
-        for (int i = 0; i < mano.size(); i++) {
-            System.out.printf("%d) %s%n", i+1, mano.get(i));
+        for (Dado dado : mano) {
+            System.out.printf("%s%n", dado);
         }
         System.out.println("Ahora, elige un dado para añadir:");
         for (int i = 0; i < opciones.length; i++) {
-            System.out.printf("#%d) %s%n", i+1, opciones[i]);
+            System.out.printf("%d) %s%n", i+1, opciones[i]);
         }
         return Util.inputEntero(this, "Elige un dado (número): ", 1, opciones.length + 1) - 1;
     }
